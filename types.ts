@@ -1,6 +1,6 @@
-export type Role = 'CEO' | 'CFO' | 'Gerente de Produto' | 'Líder de Inovação' | 'Analista';
+export type Role = 'CEO' | 'CFO' | 'Gerente de Produto' | 'Líder de Inovação' | 'Analista' | 'Administrador';
 export type Country = 'Brasil' | 'EUA' | 'Portugal' | 'Reino Unido';
-export type State = 'SP' | 'RJ' | 'MG' | 'RS' | 'CA' | 'NY' | 'Lisboa' | 'Londres'; // Simplificado
+export type State = 'SP' | 'RJ' | 'MG' | 'RS' | 'CA' | 'NY' | 'Lisboa' | 'Londres';
 export type City = string;
 
 export interface User {
@@ -15,28 +15,52 @@ export interface User {
   phone?: string;
   isGoogleUser: boolean;
   isProfileComplete: boolean;
+  createdAt: string;
+  lastLogin?: string;
 }
 
 export type ProjectMode = 'LIGHT' | 'PRO';
 export type ValueType = 'Redução de Custos' | 'Aumento de Receita' | 'Nova Receita';
 
+// ICV Answer: 1 = Sim (12.5%), 0.5 = Parcial (6.25%), 0 = Não (0%)
+export type ICVResponse = 0 | 0.5 | 1;
+
 export interface FinancialData {
-  investment: number;
-  monthlySavings?: number; // Cost Reduction
-  monthlyRevenue?: number; // Revenue
-  monthsToImplement: number;
-  lifespanMonths: number;
-  discountRate: number; // For NPV
+  // Inputs da POC (Cpoc)
+  investment: number; // Cd: Custos Diretos (usado como base ou soma de detalhados)
+  externalFees?: number; // Ci: Custos Indiretos
+  hourlyRate?: number; // Vh: Valor Hora
+  hoursPerMonth?: number; // h: Horas dedicadas/mês
+  monthsToImplement: number; // Tm: Duração POC
   
-  // Detalhes do Form Light
-  externalFees?: number; // Taxas/Comissões
-  hourlyRate?: number; // Valor Hora Média
-  totalHours?: number; // Total de Horas
-  
-  // Dados de Valor Unitário
+  // Pro Detalhado
+  startupCost?: number;
+  licenses?: number;
+  servicesCost?: number;
+  teamSize?: number;
+  otherExpenses?: number;
+  scaleImplementationMonths?: number;
+
+  // Inputs de Valor (Ve)
+  monthlySavings?: number; 
+  monthlyRevenue?: number;
+  lifespanMonths: number; // Para projeção de longo prazo
+  discountRate: number; 
+
+  // Dados de Valor Unitário (Auxiliares)
   unitCostCurrent?: number;
   unitCostNew?: number;
   monthlyVolume?: number;
+
+  // Innovation Accounting Metrics (Calculados)
+  cpoc: number; // Custo Total da POC
+  gePoc: number; // Ganho Econômico da POC (Ve - Cpoc)
+  
+  // Scale Projections (Weighted)
+  scaleInvestment: number; // Ce: Custo esperado em escala
+  scaleValue: number; // VEe: Valor Econômico esperado em escala
+  scaleEconomicGain: number; // GEe: Ganho Econômico em escala (VEe - Ce)
+  benefitCostRatio: number; // GEe / Ce
 }
 
 export interface Scenario {
@@ -46,16 +70,51 @@ export interface Scenario {
   pessimistic: number;
 }
 
+export interface DetailedScenario {
+  baseCost: number;
+  volume: number;
+  unitSavings: number;
+}
+
+export interface ProScenarios {
+  realistic: DetailedScenario;
+  optimistic: DetailedScenario;
+  pessimistic: DetailedScenario;
+}
+
+export interface Premises {
+  volumePredictable?: number;
+  frequency?: string;
+  seasonality?: string;
+  restrictions?: string;
+  dependencies?: string;
+}
+
+export interface Portfolio {
+  horizon: string;
+  complexity: string;
+  uncertainty: string;
+  clientImpact: string;
+  internalImpact: string;
+}
+
 export interface Risk {
   category: string;
   level: 'Baixo' | 'Médio' | 'Alto';
+}
+
+export interface AiAnalysis {
+  strategic: string;
+  market: string;
+  risks: string;
+  actionPlan: string;
 }
 
 export interface Project {
   id: string;
   userId: string;
   name: string;
-  createdAt: string; // ISO date
+  createdAt: string;
   mode: ProjectMode;
   status: 'Rascunho' | 'Ativo' | 'Arquivado';
   
@@ -64,20 +123,32 @@ export interface Project {
   responsible?: string;
   valueType?: ValueType;
   
-  // Qualitativos Light
-  mainGoal?: string; // Meta Principal
-  keyIndicator?: string; // Indicador Chave
-  businessImpact?: string; // Impacto no Negócio
-  comments?: string; // Observações Finais
+  // Pro Fields
+  stakeholders?: string;
+  initiativeType?: string;
+  stage?: string;
+  innovationTheme?: string;
+  strategicGoal?: string;
+  problem?: string;
+  opportunity?: string;
+
+  // Qualitativos
+  mainGoal?: string;
+  keyIndicator?: string;
+  businessImpact?: string;
+  comments?: string;
   
-  // Financials
   financials: FinancialData;
+  premises?: Premises;
+  proScenarios?: ProScenarios;
+  portfolio?: Portfolio;
   
-  // Pro Specifics
   risks?: Risk[];
-  scenarios?: Scenario[];
+  icvAnswers?: ICVResponse[]; // Array de 8 respostas
+  icvScore: number; // 0 a 100%
   
-  // Computed (Cached for list view)
   score: number;
-  roi: number;
+  roi: number; // Mantido para compatibilidade visual, mas o foco é BCR
+  
+  aiAnalysis?: AiAnalysis;
 }
